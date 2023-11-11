@@ -128,7 +128,7 @@ const UNCONNECTED_PONG = (buffer) => {
  * @param {function} cb - The callback function to handle the response.
  * @param {number} [timeout=5000] - The timeout duration in milliseconds.
  */
-const ping = (host, port = 19132, cb, timeout = 5000) => {
+export const ping = (host, port = 19132, cb, timeout = 5000) => {
     const sockets = [];
     if (/^[0-9.]+$/.test(host)){
         sockets.push(

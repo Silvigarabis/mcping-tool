@@ -17,7 +17,7 @@ const PROTOCOL_VERSION = 0;
  * @param {function} cb The callback function to handle the ping response.
  * @param {number} [timeout=5000] The timeout duration in milliseconds.
  */
-function ping(host, port = 25565, cb, timeout = 5000) {
+export function ping(host, port = 25565, cb, timeout = 5000) {
     const socket = net.createConnection(({ host, port }));
 
     // Set manual timeout interval.

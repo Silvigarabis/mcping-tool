@@ -1,0 +1,46 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+
+        "outDir": "./dist",
+        "sourceMap": false,
+        "useDefineForClassFields": true,
+        "removeComments": false,
+        "esModuleInterop": true,
+
+        "baseUrl": "src",
+        "rootDir": "src",
+        "module": "es2022",
+        "moduleResolution": "node",
+
+        "declaration": true,
+        "declarationMap": false,
+        "declarationDir": "./@types/",
+
+        "noEmitOnError": false,
+        "forceConsistentCasingInFileNames": true,
+
+        "allowUnusedLabels": true,
+        "allowUnreachableCode": true,
+        "experimentalDecorators": true,
+        
+        "strict": true,
+        "noImplicitAny": false,
+        "strictNullChecks": true,
+
+        "allowJs": true,
+        "checkJs": true,
+
+        "skipLibCheck": true,
+        
+        "incremental": true,
+        "tsBuildInfoFile": "./.tsbuildinfo"
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.js"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
