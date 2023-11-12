@@ -60,3 +60,23 @@ export function dnsResolve6(name: string, timeout: number = 5000): Promise<strin
     return pendingPromise.promise;
 }
 
+/**
+ * 解析指定的域名。
+ * @param name 要解析的域名。
+ * @param timeout 超时时间，单位为毫秒。
+ * @returns 解析结果（一个长度不为0的数组），或者空。
+ */
+export function dnsLookup(name: string, timeout: number = 5000): Promise<dns.LookupAddress[] | null> {
+    const pendingPromise = createPendingPromise();
+    setTimeout(() => {
+        pendingPromise.resolve(null);
+    }, timeout);
+    dns.lookup(name, { all: true }, (e, r) => {
+        if (e || r.length === 0)
+            pendingPromise.resolve(null);
+        else
+            pendingPromise.resolve(r);
+    });
+    return pendingPromise.promise;
+}
+

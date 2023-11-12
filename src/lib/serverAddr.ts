@@ -39,27 +39,75 @@ interface ServerInvalidAddressInfo {
 type ServerAddressInfo = ServerValidAddressInfo | ServerInvalidAddressInfo;
 
 import ServerType from "./ServerType.js";
-import { dnsResolve4, dnsResolve6 } from "./lib.js";
+import { dnsLookup } from "./lib.js";
 import { resolveMinecraftServerSrvRecord } from "./srv.js";
+
+import type { LookupAddress } from "node:dns";
 
 export { getServerAddressInfo };
 
+type GetServerAddressInfoOptions = {
+    serverType?: ServerType
+    serverPort?: number
+    /**
+     * 返回结果中会包含的地址类型。
+     *
+     * 此选项与 {@link GetServerAddressInfoOptions#preferIpv6} 冲突。
+     */
+    family?: 4 | 6
+    /**
+     * 默认优先返回 IPV4 地址，设置该选项为 `true` 则优先返回 IPV6 地址。
+     *
+     * 此选项与 {@link GetServerAddressInfoOptions#family} 冲突。
+     */
+    preferIpv6?: boolean
+}
+
 async function getServerAddressInfo(serverAddr: string, serverType: ServerType): Promise<ServerAddressInfo>;
 async function getServerAddressInfo(serverAddr: string, port?: number): Promise<ServerAddressInfo>;
-async function getServerAddressInfo(serverAddr: string, serverPort?: ServerType | number): Promise<ServerAddressInfo> {
+async function getServerAddressInfo(serverAddr: string, option: GetServerAddressInfoOptions): Promise<ServerAddressInfo>;
+async function getServerAddressInfo(serverAddr: string, option: GetServerAddressInfoOptions | ServerType | number = {}): Promise<ServerAddressInfo> {
     let valid = true;
     //let invalidReason: any = undefined;
     let ip: string | null = null;
     let port: number | null = null;
     let srvRecord: MCServerSrvRecord | null = null;
+    
+    if (option === "java" || option === "bedrock")
+        option = { serverType: option };
+    else if (typeof option === "number")
+        option = { serverPort: option };
+    
+    /* 我不确定是否需要设置它，这段代码用于检查serverType参数是否正确
+    else if (typeof option === "string")
+        valid = false;
+        //throw new TypeError("unknown server type: " + option);
+    */
+    
+    const {
+        serverType,
+        serverPort,
+        family: addressFamily,
+        preferIpv6 = false
+    } = option;
+    
     const connectPoints: MCServerAddress[] = [];
     
     let serverAddr0 = serverAddr;
     let serverPort0 = serverPort;
     
     if (isIPV6(serverAddr) || isIPV4(serverAddr)){
-        ip = serverAddr;
-    } else if (serverPort === "java" || serverPort == null){
+        if (!addressFamily)
+            ip = serverAddr;
+        else if (addressFamily === 4 && isIPV4(serverAddr))
+            ip = serverAddr;
+        else if (addressFamily === 6 && isIPV6(serverAddr))
+            ip = serverAddr;
+        else
+            valid = false;
+    }
+    
+    if (valid && ip == null && (serverType === "java" || serverPort == null) && serverType !== "bedrock"){
         srvRecord = await resolveMinecraftServerSrvRecord(serverAddr);
         if (srvRecord != null){
             serverAddr0 = srvRecord.ip;
@@ -67,9 +115,9 @@ async function getServerAddressInfo(serverAddr: string, serverPort?: ServerType 
         }
     }
     
-    if (serverPort0 === "java")
+    if (serverType === "java")
         port = 25565;
-    else if (serverPort0 === "bedrock")
+    else if (serverType === "bedrock")
         port = 19132;
     else if (serverPort0 != null)
         port = serverPort0;
@@ -82,51 +130,54 @@ async function getServerAddressInfo(serverAddr: string, serverPort?: ServerType 
        书接上回，这里还没有获得实际的连接地址，并且仍然可能是有效地址
        尝试dns解析
     */
-    if (ip == null && valid){
-        let dnsIp4: string[] | null = null;
-        let dnsIp6: string[] | null = null;
-        
-        //note: prefer ipv4
-        
+    if (valid && ip == null){
+        let dnsIps: LookupAddress[] | null = null;
         try {
-            dnsIp4 = await dnsResolve4(serverAddr0);
+            dnsIps = await dnsLookup(serverAddr0);
         } catch {
-            //do nothing
-        }
-
-        try {
-            dnsIp6 = await dnsResolve6(serverAddr0);
-        } catch {
-            //do nothing
+            // just ignore it
         }
         
-        /*
-           BDS服务器默认在 IPV6 的 19133 端口运行
-           但是这段代码合理吗？
-               客户端并不会因为检测到 IPV6 地址就去连接 19133 端口
-           
-        if (serverPort === "bedrock" && dnsIp4 == null && dnsIp6 != null)
-            port = 19133;
-        */
+        const dnsIp4: string[] = [];
+        const dnsIp6: string[] = [];
         
-        
-        if (dnsIp4 != null){
-            ip = dnsIp4[0];
-            if (dnsIp6 != null){
-                connectPoints.push({ ip: dnsIp6[0], port });
+        if (dnsIps != null)
+        for (const dnsIp of dnsIps){
+            if (!addressFamily || addressFamily === 4){
+                if (dnsIp.family === 4)
+                    dnsIp4.push(dnsIp.address);
             }
-        } else if (dnsIp6 != null){
+            if (!addressFamily || addressFamily === 6){
+                if (dnsIp.family === 6)
+                    dnsIp6.push(dnsIp.address);
+            }
+        }
+        
+        if (preferIpv6 && dnsIp6.length > 0){
+            ip = dnsIp6[0];
+        } else if (dnsIp4.length > 0){
+            ip = dnsIp4[0];
+        } else if (dnsIp6.length > 0){
             ip = dnsIp6[0];
         } else {
             valid = false;
         }
+        
+        if (dnsIp4.length > 0 && dnsIp6.length > 0){
+            if (preferIpv6)
+                connectPoints.push({ ip: dnsIp4[0], port });
+            else
+                connectPoints.push({ ip: dnsIp6[0], port });
+        }
     }
     
-    if (srvRecord != null)
-        connectPoints.unshift(srvRecord);
-    else if (ip != null && port != null)
+    if (ip != null && port != null)
         connectPoints.unshift({ ip, port });
-        
+    
+    //只是一段预防，可能永远也不会出现
+    if (connectPoints.length === 0 && valid)
+        valid = false;
+    
     if (!valid){
         return {
             valid, serverAddr
