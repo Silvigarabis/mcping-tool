@@ -40,6 +40,13 @@ export type JavaPingResponse = {
     previewsChat?: boolean;
 };
 
+export type JavaPingResult = {
+    pingDelay: number;
+    pingResponse: JavaPingResponse;
+};
+
+export type PingCallback = (err: any, response: JavaPingResult) => any
+
 /**
  * Asynchronously ping Minecraft Java server.
  * 
