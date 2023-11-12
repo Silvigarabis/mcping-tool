@@ -15,6 +15,13 @@ export function isIPV6(ip: string){
     return ipv6ExactRegex.test(ip);
 }
 
+/**
+ * 检查一段字符串是否代表一个 IPV4 或 IPV6 地址。
+ */
+export function isIP(ip: string){
+    return isIPV6(ip) || isIPV4(ip);
+}
+
 type MCServerAddress = {
     ip: string
     port: number
@@ -47,7 +54,21 @@ import type { LookupAddress } from "node:dns";
 export { getServerAddressInfo };
 
 type GetServerAddressInfoOptions = {
+    /**
+     * 服务器类型。
+     *
+     * 必须至少指定 {@link GetServerAddressInfoOptions#serverType}
+     * 或 {@link GetServerAddressInfoOptions#serverPort} 当中的一个，
+     * 否则不论如何都无法得到结果。
+     */
     serverType?: ServerType
+    /**
+     * 服务器连接端口。
+     *
+     * 必须至少指定 {@link GetServerAddressInfoOptions#serverType}
+     * 或 {@link GetServerAddressInfoOptions#serverPort} 当中的一个，
+     * 否则不论如何都无法得到结果。
+     */
     serverPort?: number
     /**
      * 返回结果中会包含的地址类型。
@@ -78,12 +99,6 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     else if (typeof option === "number")
         option = { serverPort: option };
     
-    /* 我不确定是否需要设置它，这段代码用于检查serverType参数是否正确
-    else if (typeof option === "string")
-        valid = false;
-        //throw new TypeError("unknown server type: " + option);
-    */
-    
     const {
         serverType,
         serverPort,
@@ -96,18 +111,41 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     let serverAddr0 = serverAddr;
     let serverPort0 = serverPort;
     
-    if (isIPV6(serverAddr) || isIPV4(serverAddr)){
-        if (!addressFamily)
-            ip = serverAddr;
-        else if (addressFamily === 4 && isIPV4(serverAddr))
-            ip = serverAddr;
-        else if (addressFamily === 6 && isIPV6(serverAddr))
-            ip = serverAddr;
+    /*
+        serverPort 与 serverType 至少有一个需要被指定
+    */
+    if (serverPort == null)
+        if (serverType === "java")
+            serverPort0 = 25565;
+        else if (serverType === "bedrock")
+            serverPort0 = 19132;
         else
             valid = false;
+    else if (typeof serverPort === "number")
+        serverPort0 = serverPort; // 可能有重复的步骤，但是为了可读性没有合并
+    else
+        valid = false; //都没有，参数异常
+    
+    /*
+        如果主机名是一个IP地址
+    */
+    if (valid && isIP(serverAddr)){
+        ip = serverAddr;
     }
     
-    if (valid && ip == null && (serverType === "java" || serverPort == null) && serverType !== "bedrock"){
+    /*
+        在前边的判断中没有找到不正确的参数
+        传入的主机名不是IP
+        Java版服务器
+        端口未指定
+        
+            尝试获取SRV记录
+    */
+    if (valid
+        && ip == null
+        && serverPort == null
+        && serverType == "java"
+    ){
         srvRecord = await resolveMinecraftServerSrvRecord(serverAddr);
         if (srvRecord != null){
             serverAddr0 = srvRecord.ip;
@@ -115,19 +153,36 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         }
     }
     
-    if (serverType === "java")
-        port = 25565;
-    else if (serverType === "bedrock")
-        port = 19132;
-    else if (serverPort0 != null)
-        port = serverPort0;
-    else {
-        valid = false; // serverPort 为空时解析 SRV 记录，但是没有得到结果。
-        port = -1; //让后边不要报类型错误，实际上到这里返回的结果就没有它了
+    // SRV解析得到的主机名可能是IP地址而不是另一个域名
+    if (valid && ip == null && isIP(serverAddr0)){
+        ip = serverAddr0;
     }
     
+    //在这里检查可能存在的IP地址是否与参数 addressFamily 所期望的相同
+    //~~同时也判断 addressFamily 参数是否是合法的参数~~ 不检查了，麻烦
+    if (valid && ip != null && addressFamily != null){
+        if (addressFamily === 4 && !isIPV4(ip))
+            valid = false;
+        else if (addressFamily === 6 && !isIPV6(ip))
+            valid = false;
+    }
+        
     /*
-       书接上回，这里还没有获得实际的连接地址，并且仍然可能是有效地址
+        检查端口是否正确
+    */
+
+    if (serverPort0 != null)
+        port = serverPort0;
+    else
+        port = -1;
+    
+    if (port > 65535 || port < 0 /* 话说0是有效的端口嘛？ */){
+        port = -1;
+        valid = false;
+   }
+   
+    /*
+       书接上回，这里还没有获得实际的连接IP，并且仍然可能是有效地址（可能来源自SRV记录）
        尝试dns解析
     */
     if (valid && ip == null){
@@ -174,7 +229,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     if (ip != null && port != null)
         connectPoints.unshift({ ip, port });
     
-    //只是一段预防，可能永远也不会出现
+    //只是一段预防，可能永远也不会触发
     if (connectPoints.length === 0 && valid)
         valid = false;
     
