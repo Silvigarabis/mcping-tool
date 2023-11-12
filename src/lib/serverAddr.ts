@@ -40,6 +40,7 @@ interface ServerValidAddressInfo {
 
 interface ServerInvalidAddressInfo {
     valid: false
+    invalidReason?: any
     serverAddr: string
 }
 
@@ -82,6 +83,11 @@ type GetServerAddressInfoOptions = {
      * 此选项与 {@link GetServerAddressInfoOptions#family} 冲突。
      */
     preferIpv6?: boolean
+    /**
+     * 指定在无法得到有效的结果时抛出错误。
+     * 默认为 `false`。
+     */
+    throwsOnInvalid?: boolean
 }
 
 async function getServerAddressInfo(serverAddr: string, serverType: ServerType): Promise<ServerAddressInfo>;
@@ -89,6 +95,8 @@ async function getServerAddressInfo(serverAddr: string, port?: number): Promise<
 async function getServerAddressInfo(serverAddr: string, option: GetServerAddressInfoOptions): Promise<ServerAddressInfo>;
 async function getServerAddressInfo(serverAddr: string, option: GetServerAddressInfoOptions | ServerType | number = {}): Promise<ServerAddressInfo> {
     let valid = true;
+    let invalidReason: any;
+    
     //let invalidReason: any = undefined;
     let ip: string | null = null;
     let port: number | null = null;
@@ -103,7 +111,8 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         serverType,
         serverPort,
         family: addressFamily,
-        preferIpv6 = false
+        preferIpv6 = false,
+        throwsOnInvalid = false
     } = option;
     
     const connectPoints: MCServerAddress[] = [];
@@ -120,11 +129,11 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         else if (serverType === "bedrock")
             serverPort0 = 19132;
         else
-            valid = false;
+            setInvalid("invalid argument: serverType");
     else if (typeof serverPort === "number")
         serverPort0 = serverPort; // 可能有重复的步骤，但是为了可读性没有合并
     else
-        valid = false; //都没有，参数异常
+        setInvalid("invalid arguments"); //都没有，参数异常
     
     /*
         如果主机名是一个IP地址
@@ -162,9 +171,9 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     //~~同时也判断 addressFamily 参数是否是合法的参数~~ 不检查了，麻烦
     if (valid && ip != null && addressFamily != null){
         if (addressFamily === 4 && !isIPV4(ip))
-            valid = false;
+            setInvalid("address family mismatch");
         else if (addressFamily === 6 && !isIPV6(ip))
-            valid = false;
+            setInvalid("address family mismatch");
     }
         
     /*
@@ -173,13 +182,15 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
 
     if (serverPort0 != null)
         port = serverPort0;
-    else
+    else {
         port = -1;
+        setInvalid("missing port argument");
+    }
     
-    if (port > 65535 || port < 0 /* 话说0是有效的端口嘛？ */){
+    if (isNaN(port) || port > 65535 || port < 0 /* 话说0是有效的端口嘛？ */){
         port = -1;
-        valid = false;
-   }
+        setInvalid("invalid port");
+    }
    
     /*
        书接上回，这里还没有获得实际的连接IP，并且仍然可能是有效地址（可能来源自SRV记录）
@@ -215,7 +226,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         } else if (dnsIp6.length > 0){
             ip = dnsIp6[0];
         } else {
-            valid = false;
+            setInvalid("no dns data");
         }
         
         if (dnsIp4.length > 0 && dnsIp6.length > 0){
@@ -231,11 +242,14 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     
     //只是一段预防，可能永远也不会触发
     if (connectPoints.length === 0 && valid)
-        valid = false;
+        setInvalid("no connection point found");
     
     if (!valid){
+        if (throwsOnInvalid)
+            throw new Error(invalidReason);
+        
         return {
-            valid, serverAddr
+            valid, invalidReason, serverAddr
         };
     } else if (srvRecord != null){
         return {
@@ -256,5 +270,12 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
             connectPoints,
             serverAddr
         };
+    }
+    
+    function setInvalid(reason?: any){
+        if (valid){
+            invalidReason = reason;
+            valid = false;
+        }
     }
 }
