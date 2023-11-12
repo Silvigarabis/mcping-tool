@@ -9,6 +9,7 @@
 'use strict';
 
 import dgram from 'dgram';
+import { isIPV6 } from "./serverAddr.js";
 
 const START_TIME = new Date().getTime();
 
@@ -122,26 +123,20 @@ const UNCONNECTED_PONG = (buffer) => {
 };
 
 /**
- * Sends a ping request to the specified host and port.
- * @param {string} host - The IP address or hostname of the server.
+ * Sends a ping request to the specified ip and port.
+ * @param {string} ip - The IP address of the server.
  * @param {number} [port=19132] - The port number.
  * @param {function} cb - The callback function to handle the response.
  * @param {number} [timeout=5000] - The timeout duration in milliseconds.
  */
-export const ping = (host, port = 19132, cb, timeout = 5000) => {
-    const sockets = [];
-    if (/^[0-9.]+$/.test(host)){
-        sockets.push(
-            dgram.createSocket("udp4")
-        );
-    } else {
-        sockets.push(
-            dgram.createSocket("udp6"),
-            dgram.createSocket("udp4")
-        );
-    }
-
+export const ping = (ip, port = 19132, cb, timeout = 5000) => {
     let socket;
+
+    if (isIPV6(ip)){
+        socket = dgram.createSocket('udp6');
+    } else {
+        socket = dgram.createSocket('udp4');
+    }
 
     // Set manual timeout interval.
     // This ensures the connection will NEVER hang regardless of internal state
@@ -158,49 +153,34 @@ export const ping = (host, port = 19132, cb, timeout = 5000) => {
     // This protects multiple error callbacks given the complex socket state
     // This is mostly dangerous since it can swallow errors
     let didFireError = false;
-    
-    startConnection();
-
-    function pingWithSocket(socket0){
-        socket = socket0;
-        socket.on("message", onMessage);
-        socket.on("error", handleError);
-        const ping = UNCONNECTED_PING(new Date().getTime() - START_TIME);
-        socket.send(ping, 0, ping.length, port, host);
-    };
-    
-    function startConnection(){
-        try {
-            pingWithSocket(sockets.shift());
-        } catch (err) {
-            handleError(err);
-        }
-    }
 
     /**
      * Handle any error that occurs during the ping process.
      * @param {Error} err The error that occurred.
      */
-    function handleError(err){
-        if (sockets.length !== 0 && (err?.syscall === "getaddrinfo" || err?.code === "ENOTFOUND")){
-            try {
-                socket.close();
-            } catch {
-                // nothing to do
-            }
-            startConnection();
-            return;
-        }
-
+    const handleError = (err) => {
         closeSocket();
 
         if (!didFireError) {
             didFireError = true;
             cb(null, err);
         }
+    };
+
+    let startPingConnectTime = 0;
+    let pingDelay = null;
+
+    try {
+        const ping = UNCONNECTED_PING(new Date().getTime() - START_TIME);
+        startPingConnectTime = Date.now();
+        socket.send(ping, 0, ping.length, port, ip);
+    } catch (err) {
+        handleError(err);
     }
 
-    function onMessage(msg){
+    socket.on('message', (msg) => {
+        if (pingDelay == null)
+            pingDelay = Date.now() - startPingConnectTime;
 
         const id = msg[0];
 
@@ -230,24 +210,7 @@ export const ping = (host, port = 19132, cb, timeout = 5000) => {
                 break;
             }
         }
-    }
-};
-
-/**
- * Asynchronously ping Minecraft Bedrock server.
- * The optional `options` argument can be an object with a `ping` (default is `19132`) or/and `timeout` (default is `5000`) property.
- * @param {string} host The Bedrock server address.
- * @param {import('../types/index.js').PingOptions} options The configuration for pinging Minecraft Bedrock server.
- * @returns {Promise<import('../types/index.js').BedrockPingResponse>}
- */
-export const pingBedrock = (host, options = {}) => {
-    if (!host) throw new Error('Host argument is not provided');
-
-    const { port = 19132, timeout = 5000 } = options;
-
-    return new Promise((resolve, reject) => {
-        ping(host, port, (res, err) => {
-            err ? reject(err) : resolve(res);
-        }, timeout);
     });
+
+    socket.on('error', handleError);
 };

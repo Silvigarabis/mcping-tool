@@ -7,6 +7,7 @@
 
 import net from 'net';
 import varint from './varint.js';
+import { isIP } from "./serverAddr.js";
 
 const PROTOCOL_VERSION = 0;
 
@@ -122,23 +123,4 @@ export function ping(ip, port = 25565, cb, timeout = 5000, serverAddr = ip) {
     });
 
     socket.on('error', handleError);
-}
-
-/**
- * Asynchronously ping Minecraft Java server.
- * The optional `options` argument can be an object with a `ping` (default is `25565`) or/and `timeout` (default is `5000`) property.
- * @param {string} host The Java server address.
- * @param {import('../types/index.js').PingOptions} options The configuration for pinging Minecraft Java server.
- * @returns {Promise<import('../types/index.js').JavaPingResponse>}
- */
-export function pingJava(host, options = {}) {
-    if (!host) throw new Error('Host argument is not provided');
-
-    const { port = 25565, timeout = 5000 } = options;
-
-    return new Promise((resolve, reject) => {
-        ping(host, port, (err, res) => {
-            err ? reject(err) : resolve(res.pingResponse);
-        }, timeout);
-    });
 }
