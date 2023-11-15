@@ -14,11 +14,12 @@ const PROTOCOL_VERSION = 0;
 /**
  * Ping a Minecraft Java server.
  * @param {string} ip The ip address of the Java server.
- * @param {number} [port=25565] The port of the Java server.
- * @param {import("../types/lib/java.js").PingCallback} cb The callback function to handle the ping response.
+ * @param {number} port The port of the Java server.
+ * @param {import("../types/lib/java.js").JavaPingCallback} cb The callback function to handle the ping response.
  * @param {number} [timeout=5000] The timeout duration in milliseconds.
+ * @param {string} [serverAddr=ip] 将会发送到服务器以查询服务器信息使用的服务器连接地址，一般情况下这没有什么作用。默认与 `ip` 相同。
  */
-export function ping(ip, port = 25565, cb, timeout = 5000, serverAddr = ip) {
+export function ping(ip, port, cb, timeout = 5000, serverAddr = ip) {
     const socket = net.createConnection(({ host: ip, port }));
 
     // Set manual timeout interval.

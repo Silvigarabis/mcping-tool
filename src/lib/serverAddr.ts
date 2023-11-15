@@ -29,7 +29,7 @@ type MCServerAddress = {
 
 type MCServerSrvRecord = MCServerAddress;
 
-interface ServerValidAddressInfo {
+export interface ServerValidAddressInfo {
     valid: true
     srvRecord?: MCServerSrvRecord
     serverAddr: string
@@ -38,13 +38,13 @@ interface ServerValidAddressInfo {
     connectPoints: MCServerAddress[]
 }
 
-interface ServerInvalidAddressInfo {
+export interface ServerInvalidAddressInfo {
     valid: false
     invalidReason?: any
     serverAddr: string
 }
 
-type ServerAddressInfo = ServerValidAddressInfo | ServerInvalidAddressInfo;
+export type ServerAddressInfo = ServerValidAddressInfo | ServerInvalidAddressInfo;
 
 import ServerType from "./ServerType.js";
 import { dnsLookup } from "./lib.js";
@@ -87,6 +87,7 @@ type GetServerAddressInfoOptions = {
      * 指定在无法得到有效的结果时抛出错误。
      * 默认为 `false`。
      */
+    noSrv?: boolean
     throwsOnInvalid?: boolean
 }
 
@@ -112,7 +113,8 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         serverPort,
         family: addressFamily,
         preferIpv6 = false,
-        throwsOnInvalid = false
+        throwsOnInvalid = false,
+        noSrv
     } = option;
     
     const connectPoints: MCServerAddress[] = [];
@@ -150,7 +152,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         
             尝试获取SRV记录
     */
-    if (valid
+    if (valid && !noSrv
         && ip == null
         && serverPort == null
         && serverType == "java"
