@@ -72,6 +72,14 @@ type GetServerAddressInfoOptions = {
      */
     serverPort?: number
     /**
+     * 执行对Minecraft服务器的SRV解析。
+     *
+     * 在未指定 serverPort 并且服务器类型为 java 时默认为真。
+     * 
+     * "force" 表示无论如何也要进行SRV解析（这可能会与 serverPort 配置冲突）。
+     */
+    resolveSrvRecord?: boolean | "force"
+    /**
      * 返回结果中会包含的地址类型。
      *
      * 此选项与 {@link GetServerAddressInfoOptions#preferIpv6} 冲突。
@@ -110,6 +118,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     const {
         serverType,
         serverPort,
+        resolveSrvRecord = true,
         family: addressFamily,
         preferIpv6 = false,
         throwsOnInvalid = false
@@ -147,13 +156,17 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         传入的主机名不是IP
         Java版服务器
         端口未指定
-        
+        resolveSrvRecord为真
+
+        或者 resolveSrvRecord === "force"
+
             尝试获取SRV记录
     */
-    if (valid
+    if (valid && resolveSrvRecord
         && ip == null
         && serverPort == null
         && serverType == "java"
+        || resolveSrvRecord === "force"
     ){
         srvRecord = await resolveMinecraftServerSrvRecord(serverAddr);
         if (srvRecord != null){
