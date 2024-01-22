@@ -138,11 +138,11 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         else if (serverType === "bedrock")
             serverPort0 = 19132;
         else
-            setInvalid("invalid argument: serverType");
+            setInvalid(new TypeError("invalid argument: serverType"));
     else if (typeof serverPort === "number")
         serverPort0 = serverPort; // 可能有重复的步骤，但是为了可读性没有合并
     else
-        setInvalid("invalid arguments"); //都没有，参数异常
+        setInvalid(new ReferenceError("invalid arguments, cannot determine server type")); //都没有，参数异常
     
     /*
         如果主机名是一个IP地址
@@ -197,7 +197,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         port = serverPort0;
     else {
         port = -1;
-        setInvalid("missing port argument");
+        setInvalid(new TypeError("missing port argument"));
     }
     
     if (isNaN(port) || port > 65535 || port < 0 /* 话说0是有效的端口嘛？ */){
@@ -258,11 +258,20 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         setInvalid("no connection point found");
     
     if (!valid){
-        if (throwsOnInvalid)
-            throw new Error(invalidReason);
+        let finalError;
+        if (invalidReason instanceof Error){
+            finalError = invalidReason;
+        } else if (invalidReason != null){
+            finalError = new Error(invalidReason);
+        } else {
+            finalError = new Error("unknown error while resolving dns data");
+        }
         
+        if (throwsOnInvalid)
+            throw finalError;
+
         return {
-            valid, invalidReason, serverAddr
+            valid, invalidReason: finalError, serverAddr
         };
     } else if (srvRecord != null){
         return {
