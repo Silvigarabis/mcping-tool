@@ -20,7 +20,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         serverAddr = host,
         serverType = "unknown",
         serverPort,
-        noSrv,
+        resolveSrvRecord = true,
         addressFamily,
         preferIpv6,
         throwsOnInvalid = true,
@@ -35,7 +35,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
        const serverAddressInfoJava = await getServerAddressInfo(host, {
            serverType: "java",
            serverPort,
-           noSrv,
+           resolveSrvRecord,
            family: addressFamily,
            preferIpv6,
            throwsOnInvalid
@@ -63,7 +63,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
        const serverAddressInfo = await getServerAddressInfo(host, {
            serverType: "bedrock",
            serverPort,
-           noSrv: true,
+           resolveSrvRecord: true,
            family: addressFamily,
            preferIpv6,
            throwsOnInvalid
@@ -103,7 +103,7 @@ interface MCPingOption {
     serverAddr?: string
     serverType?: ServerType
     serverPort?: number
-    noSrv?: boolean
+    resolveSrvRecord?: boolean | "force"
     addressFamily?: 4 | 6
     preferIpv6?: boolean
     throwsOnInvalid?: boolean
