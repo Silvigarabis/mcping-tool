@@ -39,7 +39,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
             resolveSrvRecord,
             family: addressFamily,
             preferIpv6,
-            throwsOnInvalid
+            throwsOnInvalid: false
         });
 
         if (!serverAddressInfoJava.valid){
@@ -50,6 +50,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
 
         if (serverAddressInfoJava.valid && serverAddressFilter != null){
             try {
+                reason = new Error("address check fail from serverAddressFilter");
                 addressIsValid = serverAddressFilter(serverAddressInfoJava.ip, serverAddressInfoJava.port);
             } catch(e){
                 reason = e;
@@ -83,7 +84,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
             resolveSrvRecord: true,
             family: addressFamily,
             preferIpv6,
-            throwsOnInvalid
+            throwsOnInvalid: false
         });
 
         if (!serverAddressInfo.valid){
@@ -94,6 +95,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
 
         if (serverAddressInfo.valid && serverAddressFilter != null){
             try {
+                reason = new Error("address check fail from serverAddressFilter");
                 addressIsValid = serverAddressFilter(serverAddressInfo.ip, serverAddressInfo.port);
             } catch(e){
                 reason = e;
