@@ -30,7 +30,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
 
     let java: any;
     let bedrock: any;
-    let reason: any;
+    let reason: any[] = [];
 
     if (serverType === "unknown" || serverType === "java"){
         const serverAddressInfoJava = await getServerAddressInfo(host, {
@@ -43,17 +43,19 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         });
 
         if (!serverAddressInfoJava.valid){
-            reason = serverAddressInfoJava.invalidReason;
+            reason[reason.length] = serverAddressInfoJava.invalidReason;
         }
 
         let addressIsValid = true;
 
         if (serverAddressInfoJava.valid && serverAddressFilter != null){
             try {
-                reason = new Error("address check fail from serverAddressFilter");
                 addressIsValid = serverAddressFilter(serverAddressInfoJava.ip, serverAddressInfoJava.port);
+                if (!addressIsValid){
+                    reason[reason.length] = new Error("address check fail from serverAddressFilter");
+                }
             } catch(e){
-                reason = e;
+                reason[reason.length] = e;
                 addressIsValid = false;
             }
         }
@@ -66,7 +68,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
                             reject(e);
                         else
                             resolve(undefined);
-                        reason = e;
+                        reason[reason.length] = e;
                     } else {
                         resolve(r);
                     }
@@ -88,17 +90,19 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         });
 
         if (!serverAddressInfo.valid){
-            reason = serverAddressInfo.invalidReason;
+            reason[reason.length] = serverAddressInfo.invalidReason;
         }
 
         let addressIsValid = true;
 
         if (serverAddressInfo.valid && serverAddressFilter != null){
             try {
-                reason = new Error("address check fail from serverAddressFilter");
                 addressIsValid = serverAddressFilter(serverAddressInfo.ip, serverAddressInfo.port);
+                if (!addressIsValid){
+                    reason[reason.length] = new Error("address check fail from serverAddressFilter");
+                }
             } catch(e){
-                reason = e;
+                reason[reason.length] = e;
                 addressIsValid = false;
             }
         }
@@ -111,7 +115,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
                             reject(e);
                         else
                             resolve(undefined);
-                        reason = e;
+                        reason[reason.length] = e;
                     } else {
                         resolve(r);
                     }
@@ -120,16 +124,27 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         }
     }
 
-    if (java && bedrock)
+    if (java && bedrock){
         return { status: true, java, bedrock };
-    else if (java)
+    } else if (java){
         return { status: true, java };
-    else if (bedrock)
+    } else if (bedrock){
         return { status: true, bedrock };
-    else if (throwsOnFail)
-        throw reason instanceof Error ? reason : new Error(reason);
-    else
-        return { status: false, reason };
+    } else {
+        let finalError;
+        if (reason.length > 1){
+            finalError = new AggregateError(reason);
+        } else if (reason[0] instanceof Error){
+            finalError = reason[0];
+        } else if (reason[0] != null){
+            finalError = new Error(reason[0]);
+        }
+        if (throwsOnFail){
+            throw finalError;
+        } else {
+            return { status: false, reason: finalError };
+        }
+    }
 }
 
 type ServerType = "java" | "bedrock" | "unknown";
