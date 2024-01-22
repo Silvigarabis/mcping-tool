@@ -1,4 +1,4 @@
-import { ServerValidAddressInfo, getServerAddressInfo } from "./serverAddr.js";
+import { ServerValidAddressInfo, ServerInvalidAddressInfo, getServerAddressInfo } from "./serverAddr.js";
 import { JavaPingResult } from "../types/lib/java.js";
 import { BedrockPingResult } from "../types/lib/bedrock.js";
 import { ping as pingJava } from "./java.js";
@@ -24,7 +24,8 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         addressFamily,
         preferIpv6,
         throwsOnInvalid = true,
-        throwsOnFail = false
+        throwsOnFail = false,
+        serverAddressFilter
     } = option;
     
     let java: any;
@@ -39,20 +40,36 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
            family: addressFamily,
            preferIpv6,
            throwsOnInvalid
-       }) as ServerValidAddressInfo;
-       if (serverAddressInfoJava.valid){
+       });
+       
+       if (!serverAddressInfoJava.valid){
+          reason = serverAddressInfoJava.invalidReason;
+       }
+
+       let addressIsValid = true;
+
+       if (serverAddressInfoJava.valid && serverAddressFilter != null){
+          try {
+             addressIsValid = serverAddressFilter(serverAddressInfoJava.ip, serverAddressInfoJava.port);
+          } catch(e){
+             reason = e;
+             addressIsValid = false;
+          }
+       }
+
+       if (serverAddressInfoJava.valid && addressIsValid){
           java = await new Promise((resolve, reject) => {
-              pingJava(serverAddressInfoJava.ip, serverAddressInfoJava.port, (e, r) => {
-                  if (e){
-                      if (throwsOnFail && serverType === "java")
-                          reject(e);
-                      else
-                          resolve(undefined);
-                      reason = e;
-                  } else {
-                      resolve(r);
-                  }
-              }, 5000, serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr);
+             pingJava(serverAddressInfoJava.ip, serverAddressInfoJava.port, (e, r) => {
+                if (e){
+                   if (throwsOnFail && serverType === "java")
+                      reject(e);
+                   else
+                      resolve(undefined);
+                   reason = e;
+                } else {
+                   resolve(r);
+                }
+             }, 5000, serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr);
           });
           if (serverAddressInfoJava.srvRecord && java)
               java.srvRecord = serverAddressInfoJava.srvRecord;
@@ -67,8 +84,24 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
            family: addressFamily,
            preferIpv6,
            throwsOnInvalid
-       }) as ServerValidAddressInfo;
-       if (serverAddressInfo.valid){
+       });
+       
+       if (!serverAddressInfo.valid){
+          reason = serverAddressInfo.invalidReason;
+       }
+
+       let addressIsValid = true;
+
+       if (serverAddressInfo.valid && serverAddressFilter != null){
+          try {
+             addressIsValid = serverAddressFilter(serverAddressInfo.ip, serverAddressInfo.port);
+          } catch(e){
+             reason = e;
+             addressIsValid = false;
+          }
+       }
+
+       if (serverAddressInfo.valid && addressIsValid){
           bedrock = await new Promise((resolve, reject) => {
               pingBedrock(serverAddressInfo.ip, serverAddressInfo.port, (e, r) => {
                   if (e){
@@ -108,6 +141,7 @@ interface MCPingOption {
     preferIpv6?: boolean
     throwsOnInvalid?: boolean
     throwsOnFail?: boolean
+    serverAddressFilter?: (address: string, port: number) => boolean
 }
 
 type MCPingResult = MCPingSuccessResult | MCPingFailResult
