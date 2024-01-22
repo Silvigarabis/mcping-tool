@@ -27,97 +27,97 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         throwsOnFail = false,
         serverAddressFilter
     } = option;
-    
+
     let java: any;
     let bedrock: any;
     let reason: any;
-    
+
     if (serverType === "unknown" || serverType === "java"){
-       const serverAddressInfoJava = await getServerAddressInfo(host, {
-           serverType: "java",
-           serverPort,
-           resolveSrvRecord,
-           family: addressFamily,
-           preferIpv6,
-           throwsOnInvalid
-       });
-       
-       if (!serverAddressInfoJava.valid){
-          reason = serverAddressInfoJava.invalidReason;
-       }
+        const serverAddressInfoJava = await getServerAddressInfo(host, {
+            serverType: "java",
+            serverPort,
+            resolveSrvRecord,
+            family: addressFamily,
+            preferIpv6,
+            throwsOnInvalid
+        });
 
-       let addressIsValid = true;
+        if (!serverAddressInfoJava.valid){
+            reason = serverAddressInfoJava.invalidReason;
+        }
 
-       if (serverAddressInfoJava.valid && serverAddressFilter != null){
-          try {
-             addressIsValid = serverAddressFilter(serverAddressInfoJava.ip, serverAddressInfoJava.port);
-          } catch(e){
-             reason = e;
-             addressIsValid = false;
-          }
-       }
+        let addressIsValid = true;
 
-       if (serverAddressInfoJava.valid && addressIsValid){
-          java = await new Promise((resolve, reject) => {
-             pingJava(serverAddressInfoJava.ip, serverAddressInfoJava.port, (e, r) => {
-                if (e){
-                   if (throwsOnFail && serverType === "java")
-                      reject(e);
-                   else
-                      resolve(undefined);
-                   reason = e;
-                } else {
-                   resolve(r);
-                }
-             }, 5000, serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr);
-          });
-          if (serverAddressInfoJava.srvRecord && java)
-              java.srvRecord = serverAddressInfoJava.srvRecord;
-       }
+        if (serverAddressInfoJava.valid && serverAddressFilter != null){
+            try {
+                addressIsValid = serverAddressFilter(serverAddressInfoJava.ip, serverAddressInfoJava.port);
+            } catch(e){
+                reason = e;
+                addressIsValid = false;
+            }
+        }
+
+        if (serverAddressInfoJava.valid && addressIsValid){
+            java = await new Promise((resolve, reject) => {
+                pingJava(serverAddressInfoJava.ip, serverAddressInfoJava.port, (e, r) => {
+                    if (e){
+                        if (throwsOnFail && serverType === "java")
+                            reject(e);
+                        else
+                            resolve(undefined);
+                        reason = e;
+                    } else {
+                        resolve(r);
+                    }
+                }, 5000, serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr);
+            });
+            if (serverAddressInfoJava.srvRecord && java)
+                java.srvRecord = serverAddressInfoJava.srvRecord;
+        }
     }
-    
+
     if (serverType === "unknown" || serverType === "bedrock"){
-       const serverAddressInfo = await getServerAddressInfo(host, {
-           serverType: "bedrock",
-           serverPort,
-           resolveSrvRecord: true,
-           family: addressFamily,
-           preferIpv6,
-           throwsOnInvalid
-       });
-       
-       if (!serverAddressInfo.valid){
-          reason = serverAddressInfo.invalidReason;
-       }
+        const serverAddressInfo = await getServerAddressInfo(host, {
+            serverType: "bedrock",
+            serverPort,
+            resolveSrvRecord: true,
+            family: addressFamily,
+            preferIpv6,
+            throwsOnInvalid
+        });
 
-       let addressIsValid = true;
+        if (!serverAddressInfo.valid){
+            reason = serverAddressInfo.invalidReason;
+        }
 
-       if (serverAddressInfo.valid && serverAddressFilter != null){
-          try {
-             addressIsValid = serverAddressFilter(serverAddressInfo.ip, serverAddressInfo.port);
-          } catch(e){
-             reason = e;
-             addressIsValid = false;
-          }
-       }
+        let addressIsValid = true;
 
-       if (serverAddressInfo.valid && addressIsValid){
-          bedrock = await new Promise((resolve, reject) => {
-              pingBedrock(serverAddressInfo.ip, serverAddressInfo.port, (e, r) => {
-                  if (e){
-                      if (throwsOnFail && serverType === "bedrock")
-                          reject(e);
-                      else
-                          resolve(undefined);
-                      reason = e;
-                  } else {
-                      resolve(r);
-                  }
-              }, 5000);
-          });
-       }
+        if (serverAddressInfo.valid && serverAddressFilter != null){
+            try {
+                addressIsValid = serverAddressFilter(serverAddressInfo.ip, serverAddressInfo.port);
+            } catch(e){
+                reason = e;
+                addressIsValid = false;
+            }
+        }
+
+        if (serverAddressInfo.valid && addressIsValid){
+            bedrock = await new Promise((resolve, reject) => {
+                pingBedrock(serverAddressInfo.ip, serverAddressInfo.port, (e, r) => {
+                    if (e){
+                        if (throwsOnFail && serverType === "bedrock")
+                            reject(e);
+                        else
+                            resolve(undefined);
+                        reason = e;
+                    } else {
+                        resolve(r);
+                    }
+                }, 5000);
+            });
+        }
     }
-    
+
     if (java && bedrock)
         return { status: true, java, bedrock };
     else if (java)
