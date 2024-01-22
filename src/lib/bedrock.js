@@ -125,11 +125,11 @@ const UNCONNECTED_PONG = (buffer) => {
 /**
  * Sends a ping request to the specified ip and port.
  * @param {string} ip - The IP address of the server.
- * @param {number} [port=19132] - The port number.
- * @param {function} cb - The callback function to handle the response.
+ * @param {number} port - The port number.
+ * @param {import("../types/lib/bedrock.js").BedrockPingCallback} cb - The callback function to handle the response.
  * @param {number} [timeout=5000] - The timeout duration in milliseconds.
  */
-export const ping = (ip, port = 19132, cb, timeout = 5000) => {
+export function ping(ip, port, cb, timeout = 5000){
     let socket;
 
     if (isIPV6(ip)){
@@ -163,7 +163,7 @@ export const ping = (ip, port = 19132, cb, timeout = 5000) => {
 
         if (!didFireError) {
             didFireError = true;
-            cb(null, err);
+            cb(err, null);
         }
     };
 
@@ -201,7 +201,7 @@ export const ping = (ip, port = 19132, cb, timeout = 5000) => {
                 };
 
                 closeSocket();
-                cb(clientData, null);
+                cb(null, { pingDelay, pingResponse: clientData });
                 break;
             }
 

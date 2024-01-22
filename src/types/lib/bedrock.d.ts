@@ -20,7 +20,16 @@ export type BedrockPingResponse = {
     gamemode: string;
 };
 
-/**
+export type BedrockPingResult<Response extends BedrockPingResponse = BedrockPingResponse> = {
+    pingDelay: number;
+    pingResponse: Response;
+};
+
+export type BedrockPingCallback = (err: any, result: BedrockPingResult) => any
+
+export function ping(ip: string, port: number, cb: BedrockPingCallback, timeout?: number): void;
+
+/*
  * Asynchronously ping Minecraft Bedrock server.
  * 
  * The optional `options` argument can be an object with a `ping` (default is `19132`) or/and `timeout` (default is `5000`) property.
@@ -45,5 +54,5 @@ export type BedrockPingResponse = {
  * ```
  * @see [source](https://github.com/minescope/mineping/blob/915edbec9c9ad811459458600af3531ec0836911/lib/bedrock.js#L204)
  */
-export function pingBedrock(host: string, options?: PingOptions): Promise<BedrockPingResponse>;
+//export function pingBedrock(host: string, options?: PingOptions): Promise<BedrockPingResponse>;
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Ping Minecraft in a more complex way",
   "main": "dist/index.js",
-  "types": "types/index.d.ts",
+  "types": "src/types/index.d.ts",
   "keywords": [
     "mcping",
     "minecraft",
@@ -17,6 +17,10 @@
   "engines": {
     "node": ">=14"
   },
+  "files": [
+      "dist/",
+      "src/types/"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.9.0",

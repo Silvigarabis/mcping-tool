@@ -40,14 +40,24 @@ export type JavaPingResponse = {
     previewsChat?: boolean;
 };
 
-export type JavaPingResult = {
+export type JavaPingResult<Response extends JavaPingResponse = JavaPingResponse> = {
     pingDelay: number;
-    pingResponse: JavaPingResponse;
+    pingResponse: Response;
 };
 
-export type PingCallback = (err: any, response: JavaPingResult) => any
+export type JavaPingCallback = (err: any, response: JavaPingResult) => any
 
 /**
+ * Ping a Minecraft Java server.
+ * @param {string} ip The ip address of the Java server.
+ * @param {number} port The port of the Java server.
+ * @param {JavaPingCallback} cb The callback function to handle the ping response.
+ * @param {number} [timeout=5000] The timeout duration in milliseconds.
+ * @param {string} [serverAddr=ip] 将会发送到服务器以查询服务器信息使用的服务器连接地址，一般情况下这没有什么作用。默认与 `ip` 相同。
+ */
+export function ping(ip: string, port: number, cb: JavaPingCallback, timeout?: number, serverAddr?: string): void;
+
+/*
  * Asynchronously ping Minecraft Java server.
  * 
  * The optional `options` argument can be an object with a `ping` (default is `25565`) or/and `timeout` (default is `5000`) property.
@@ -74,5 +84,5 @@ export type PingCallback = (err: any, response: JavaPingResult) => any
  * ```
  * @see [source](https://github.com/minescope/mineping/blob/915edbec9c9ad811459458600af3531ec0836911/lib/java.js#L117)
  */
-export function pingJava(host: string, options?: PingOptions): Promise<JavaPingResponse>;
+//export function pingJava(host: string, options?: PingOptions): Promise<JavaPingResponse>;
 
