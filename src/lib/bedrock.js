@@ -75,12 +75,16 @@ const parseAdvertiseString = (advertiseStr) => {
     return {
         gameId: parts[0],
         description: parts[1],
-        protocolVersion: parts[2],
+        protocolVersion: Number(parts[2]),
         gameVersion: parts[3],
-        currentPlayers: parts[4],
-        maxPlayers: parts[5],
+        currentPlayers: Number(parts[4]),
+        maxPlayers: Number(parts[5]),
         name: parts[7],
-        mode: parts[8]
+        mode: parts[8],
+        modeCode: Number(parts[9]),
+        ipv4Port: Number(parts[10]),
+        ipv6Port: Number(parts[11]),
+        serverId: parts[6],
     };
 };
 
@@ -197,7 +201,8 @@ export function ping(ip, port, cb, timeout = 5000){
                         online: pong.currentPlayers
                     },
                     description: pong.description.replace(/\xA7[0-9A-FK-OR]/ig, ''),
-                    gamemode: pong.mode
+                    gamemode: pong.mode,
+                    detailInfo: pong,
                 };
 
                 closeSocket();

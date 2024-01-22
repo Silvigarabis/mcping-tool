@@ -1,6 +1,6 @@
 {
   "name": "@imeaces/mcping-tool",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Ping Minecraft in a more complex way",
   "main": "dist/index.js",
   "types": "src/types/index.d.ts",
@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/Silvigarabis/mcping-tool.git"
+    "url": "https://github.com/Silvigarabis/mcping-tool.git"
   },
   "type": "module",
   "engines": {

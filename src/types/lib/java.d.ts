@@ -5,13 +5,21 @@ import { PingOptions } from "./bedrock";
  * @see https://wiki.vg/Chat
  */
 export type ChatComponent = {
-    text: string;
+    type?: "text" | "translatable" | "score" | "nbt" | "selector" | "keybind";
+
     bold?: boolean;
     italic?: boolean;
     underlined?: boolean;
     strikethrough?: boolean;
     obfuscated?: boolean;
     color?: string;
+
+    text?: string;
+
+    translate?: string;
+    with?: ChatComponent[];
+    fallback?: string;
+
     extra?: ChatComponent[];
 };
 

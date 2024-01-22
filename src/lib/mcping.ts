@@ -20,6 +20,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
         serverAddr = host,
         serverType = "unknown",
         serverPort,
+        forceHostName,
         resolveSrvRecord = true,
         addressFamily,
         preferIpv6,
@@ -72,7 +73,7 @@ async function mcping(host: string, option: ServerType | number | MCPingOption):
                     } else {
                         resolve(r);
                     }
-                }, 5000, serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr);
+                }, 5000, forceHostName ?? (serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr));
             });
             if (serverAddressInfoJava.srvRecord && java)
                 java.srvRecord = serverAddressInfoJava.srvRecord;
@@ -153,6 +154,10 @@ interface MCPingOption {
     serverAddr?: string
     serverType?: ServerType
     serverPort?: number
+    /**
+     * 在向服务器发送请求时使用指定的主机名。
+     */
+    forceHostName?: string
     resolveSrvRecord?: boolean | "force"
     addressFamily?: 4 | 6
     preferIpv6?: boolean
