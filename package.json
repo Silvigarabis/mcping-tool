@@ -1,6 +1,6 @@
 {
   "name": "@imeaces/mcping-tool",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "Ping Minecraft in a more complex way",
   "main": "dist/index.js",
   "types": "@types/index.d.ts",
@@ -19,7 +19,8 @@
   },
   "files": [
       "dist/",
-      "src/types/"
+      "src/",
+      "@types/"
   ],
   "license": "MIT",
   "devDependencies": {

@@ -5,10 +5,11 @@ import { ping as pingJava } from "./java.js";
 import { ping as pingBedrock } from "./bedrock.js";
 
 export { mcping };
+async function mcping(host: string): Promise<MCPingResult> 
 async function mcping(host: string, option: MCPingOption): Promise<MCPingResult> 
 async function mcping(host: string, port: number): Promise<MCPingResult> 
 async function mcping(host: string, serverType: ServerType): Promise<MCPingResult> 
-async function mcping(host: string, option: ServerType | number | MCPingOption): Promise<MCPingResult> {
+async function mcping(host: string, option?: ServerType | number | MCPingOption): Promise<MCPingResult> {
     if (typeof option === "number")
         option = { serverPort: option } as MCPingOption;
     else if (typeof option === "string")
