@@ -43,7 +43,7 @@ export type BedrockPingResult<Response extends BedrockPingResponse = BedrockPing
 
 export type BedrockPingCallback = (err: any, result: BedrockPingResult) => any
 
-export function ping(ip: string, port: number, cb: BedrockPingCallback, timeout?: number): void;
+//export function ping(ip: string, port: number, cb: BedrockPingCallback, timeout?: number): void;
 
 /*
  * Asynchronously ping Minecraft Bedrock server.

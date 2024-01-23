@@ -63,7 +63,7 @@ export type JavaPingCallback = (err: any, response: JavaPingResult) => any
  * @param {number} [timeout=5000] The timeout duration in milliseconds.
  * @param {string} [serverAddr=ip] 将会发送到服务器以查询服务器信息使用的服务器连接地址，一般情况下这没有什么作用。默认与 `ip` 相同。
  */
-export function ping(ip: string, port: number, cb: JavaPingCallback, timeout?: number, serverAddr?: string): void;
+//export function ping(ip: string, port: number, cb: JavaPingCallback, timeout?: number, serverAddr?: string): void;
 
 /*
  * Asynchronously ping Minecraft Java server.
