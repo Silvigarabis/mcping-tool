@@ -149,9 +149,9 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
     }
 }
 
-type ServerType = "java" | "bedrock" | "unknown";
+export type ServerType = "java" | "bedrock" | "unknown";
 
-interface MCPingOption {
+export interface MCPingOption {
     serverAddr?: string
     serverType?: ServerType
     serverPort?: number
@@ -167,15 +167,15 @@ interface MCPingOption {
     serverAddressFilter?: (address: string, port: number) => boolean
 }
 
-type MCPingResult = MCPingSuccessResult | MCPingFailResult
+export type MCPingResult = MCPingSuccessResult | MCPingFailResult
 
-type MCPingSuccessResult = {
+export type MCPingSuccessResult = {
     status: true;
     java?: JavaPingResult
     bedrock?: BedrockPingResult
 }
 
-type MCPingFailResult = {
+export type MCPingFailResult = {
     status: false;
     reason?: any;
 }
