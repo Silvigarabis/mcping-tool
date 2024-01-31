@@ -85,7 +85,7 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
         const serverAddressInfo = await getServerAddressInfo(host, {
             serverType: "bedrock",
             serverPort,
-            resolveSrvRecord: true,
+            resolveSrvRecord,
             family: addressFamily,
             preferIpv6,
             throwsOnInvalid: false
