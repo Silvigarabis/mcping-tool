@@ -162,11 +162,17 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
 
             尝试获取SRV记录
     */
-    if (valid && (resolveSrvRecord
-        && ip == null
-        && serverPort == null
-        && serverType == "java"
-        || resolveSrvRecord === "force")
+    if (
+        valid
+        && (
+            resolveSrvRecord === "force"
+            || (
+                && resolveSrvRecord
+                && ip == null
+                && serverPort == null
+                && serverType == "java"
+            )
+        )
     ){
         srvRecord = await resolveMinecraftServerSrvRecord(serverAddr);
         if (srvRecord != null){
