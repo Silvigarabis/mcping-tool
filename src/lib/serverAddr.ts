@@ -167,7 +167,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         && (
             resolveSrvRecord === "force"
             || (
-                && resolveSrvRecord
+                resolveSrvRecord
                 && ip == null
                 && serverPort == null
                 && serverType == "java"
