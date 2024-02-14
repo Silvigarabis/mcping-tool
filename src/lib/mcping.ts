@@ -1,15 +1,24 @@
-import { ServerValidAddressInfo, ServerInvalidAddressInfo, getServerAddressInfo } from "./serverAddr.js";
+import { ServerValidAddressInfo, ServerAddressInfo, ServerInvalidAddressInfo, getServerAddressInfo } from "./serverAddr.js";
 import { JavaPingResult } from "../types/lib/java.js";
 import { BedrockPingResult } from "../types/lib/bedrock.js";
 import { ping as pingJava } from "./java.js";
 import { ping as pingBedrock } from "./bedrock.js";
 
 export { mcping };
-async function mcping(host: string): Promise<MCPingResult> 
+
+// 有些代码，看起来还不错，其实里边已经成屎了
+// 就比如下边的这个mcping
+
+async function mcping(host: string): Promise<MCPingResult>
 async function mcping(host: string, option: MCPingOption): Promise<MCPingResult> 
 async function mcping(host: string, port: number): Promise<MCPingResult> 
 async function mcping(host: string, serverType: ServerType): Promise<MCPingResult> 
-async function mcping(host: string, option?: ServerType | number | MCPingOption): Promise<MCPingResult> {
+async function mcping(option: MCPingOption): Promise<MCPingResult> 
+async function mcping(host: string | MCPingOption, option?: ServerType | number | MCPingOption): Promise<MCPingResult> {
+    if (typeof host !== "string"){
+       option = host;
+       host = host.serverAddr as string;
+    }
     if (typeof option === "number")
         option = { serverPort: option } as MCPingOption;
     else if (typeof option === "string")
@@ -30,9 +39,11 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
         serverAddressFilter
     } = option;
 
+    let reason: any[] = [];
     let java: any;
     let bedrock: any;
-    let reason: any[] = [];
+    let addressJava: ServerAddressInfo & { addressIsValid: boolean } | null = null;
+    let addressBedrock: ServerAddressInfo & { addressIsValid: boolean } | null = null;
 
     if (serverType === "unknown" || serverType === "java"){
         const serverAddressInfoJava = await getServerAddressInfo(host, {
@@ -43,6 +54,8 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
             preferIpv6,
             throwsOnInvalid: false
         });
+        //@ts-ignore
+        addressJava = serverAddressInfoJava;
 
         if (!serverAddressInfoJava.valid){
             reason[reason.length] = serverAddressInfoJava.invalidReason;
@@ -62,6 +75,9 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
             }
         }
 
+        //@ts-ignore
+        addressJava.addressIsValid = addressIsValid;
+
         if (serverAddressInfoJava.valid && addressIsValid){
             java = await new Promise((resolve, reject) => {
                 pingJava(serverAddressInfoJava.ip, serverAddressInfoJava.port, (e, r) => {
@@ -76,8 +92,6 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
                     }
                 }, 5000, forceHostName ?? (serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr));
             });
-            if (serverAddressInfoJava.srvRecord && java)
-                java.srvRecord = serverAddressInfoJava.srvRecord;
         }
     }
 
@@ -90,6 +104,8 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
             preferIpv6,
             throwsOnInvalid: false
         });
+        //@ts-ignore
+        addressBedrock = serverAddressInfo;
 
         if (!serverAddressInfo.valid){
             reason[reason.length] = serverAddressInfo.invalidReason;
@@ -109,6 +125,9 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
             }
         }
 
+        //@ts-ignore
+        addressBedrock.addressIsValid = addressIsValid;
+
         if (serverAddressInfo.valid && addressIsValid){
             bedrock = await new Promise((resolve, reject) => {
                 pingBedrock(serverAddressInfo.ip, serverAddressInfo.port, (e, r) => {
@@ -126,13 +145,24 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
         }
     }
 
-    if (java && bedrock){
-        return { status: true, java, bedrock };
-    } else if (java){
-        return { status: true, java };
-    } else if (bedrock){
-        return { status: true, bedrock };
-    } else {
+    let result: any = {
+    };
+    if (java || bedrock){
+        result.status = true;
+    }
+    if (bedrock){
+        result.bedrock = bedrock;
+    }
+    if (java){
+        result.java = java;
+    }
+    if (addressJava){
+        result.addressJava = addressJava;
+    }
+    if (addressBedrock){
+        result.addressBedrock = addressBedrock;
+    }
+    if (!result.status){
         let finalError;
         if (reason.length > 1){
             finalError = new AggregateError(reason);
@@ -140,12 +170,15 @@ async function mcping(host: string, option?: ServerType | number | MCPingOption)
             finalError = reason[0];
         } else if (reason[0] != null){
             finalError = new Error(reason[0]);
-        }
-        if (throwsOnFail){
-            throw finalError;
         } else {
-            return { status: false, reason: finalError };
+            finalError = new Error("unknown error");
         }
+        result.reason = finalError;
+    }
+    if (throwsOnFail && !result.status){
+        throw result.reason;
+    } else {
+        return result;
     }
 }
 
@@ -167,15 +200,68 @@ export interface MCPingOption {
     serverAddressFilter?: (address: string, port: number) => boolean
 }
 
-export type MCPingResult = MCPingSuccessResult | MCPingFailResult
+export type MCPingResult = MCPingFailResult
+   | MCPingSuccessWithJavaResult
+   | MCPingSuccessWithBedrockResult;
 
-export type MCPingSuccessResult = {
+export type MCPingSuccessResult = MCPingSuccessWithBedrockResult | MCPingSuccessWithJavaResult | (MCPingSuccessWithBedrockResult & MCPingSuccessWithJavaResult)
+
+export type MCPingSuccessWithJavaResult = {
     status: true;
-    java?: JavaPingResult
-    bedrock?: BedrockPingResult
+    java: JavaPingResult;
+    addressJava: ServerValidAddressInfo & { addressIsValid: true };
+}
+
+export type MCPingSuccessWithBedrockResult = {
+    status: true;
+    bedrock: BedrockPingResult;
+    addressBedrock: ServerValidAddressInfo & { addressIsValid: true };
 }
 
 export type MCPingFailResult = {
     status: false;
     reason?: any;
+    addressBedrock?: ServerAddressInfo & { addressIsValid: boolean };
+    addressJava?: ServerAddressInfo & { addressIsValid: boolean };
 }
+
+
+
+/*
+ //有点抽象，先不用这个
+ 
+class MinecraftBedrockServerPinger extends MinecraftServerPinger<BedrockPingResult> {
+   constructor(){
+   }
+}
+
+class MinecraftJavaServerPinger extends MinecraftServerPinger<JavaPingResult> {
+   constructor(){
+   }
+}
+
+class MinecraftServerPinger<Result> extends NetworkPinger<Result, ServerValidAddressInfo> {
+   constructor(){
+   }
+   public checkAddress(): boolean {
+      
+   }
+}
+
+abstract class NetworkPinger<Result, AddressInfo> {
+   protected addressInfo: AddressInfo;
+   public pingServer(): Promise<Result> {
+      if (!this.checkAddress()){
+         return { status: false, addressIsValid: false };
+      }
+      return { status: false };
+   }
+   public checkAddress(): boolean {
+      return true;
+   }
+   public constructor(addressInfo: AddressInfo){
+      this.addressInfo = AddressInfo;
+   }
+}
+
+*/

@@ -194,11 +194,11 @@ export function ping(ip, port, cb, timeout = 5000){
                 const clientData = {
                     version: {
                         name: pong.name,
-                        protocol: pong.protocolVersion
+                        protocol: Number(pong.protocolVersion)
                     },
                     players: {
-                        max: pong.maxPlayers,
-                        online: pong.currentPlayers
+                        max: Number(pong.maxPlayers),
+                        online: Number(pong.currentPlayers)
                     },
                     description: pong.description.replace(/\xA7[0-9A-FK-OR]/ig, ''),
                     gamemode: pong.mode,

@@ -257,6 +257,10 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     if (connectPoints.length === 0 && valid)
         setInvalid("no connection point found");
     
+    if (valid && resolveSrvRecord === "force" && srvRecord == null){
+       setInvalid("no srv record found");
+    }
+
     if (!valid){
         let finalError;
         if (invalidReason instanceof Error){

@@ -10,11 +10,11 @@ export type PingOptions = {
 export type BedrockPingResponse = {
     version: {
         name: string;
-        protocol: string;
+        protocol: number;
     };
     players: {
-        max: string;
-        online: string;
+        max: number;
+        online: number;
     };
     description: string;
     gamemode: string;
