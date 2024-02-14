@@ -146,6 +146,7 @@ async function mcping(host: string | MCPingOption, option?: ServerType | number 
     }
 
     let result: any = {
+       status: false
     };
     if (java || bedrock){
         result.status = true;

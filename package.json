@@ -1,6 +1,6 @@
 {
   "name": "@imeaces/mcping-tool",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Ping Minecraft in a more complex way",
   "main": "dist/index.js",
   "types": "@types/index.d.ts",
