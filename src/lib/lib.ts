@@ -66,14 +66,16 @@ export function dnsResolve6(name: string, timeout: number = 5000): Promise<strin
  * @param timeout 超时时间，单位为毫秒。
  * @returns 解析结果（一个长度不为0的数组），或者空。
  */
-export function dnsLookup(name: string, timeout: number = 5000): Promise<dns.LookupAddress[] | null> {
+export function dnsLookup(name: string, timeout: number = 5000): Promise<dns.LookupAddress[]> {
     const pendingPromise = createPendingPromise();
     setTimeout(() => {
-        pendingPromise.resolve(null);
+        pendingPromise.reject(new Error("socket timeout"));
     }, timeout);
     dns.lookup(name, { all: true }, (e, r) => {
-        if (e || r.length === 0)
-            pendingPromise.resolve(null);
+        if (e)
+            pendingPromise.reject(e);
+        else if (r.length === 0)
+            pendingPromise.reject(new Error("no dns data"));
         else
             pendingPromise.resolve(r);
     });
