@@ -211,10 +211,11 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
     */
     if (valid && ip == null){
         let dnsIps: LookupAddress[] | null = null;
+        let dnsError: any = null;
         try {
             dnsIps = await dnsLookup(serverAddr0);
-        } catch {
-            // just ignore it
+        } catch(e) {
+            dnsError = e;
         }
         
         const dnsIp4: string[] = [];
@@ -239,7 +240,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         } else if (dnsIp6.length > 0){
             ip = dnsIp6[0];
         } else {
-            setInvalid("no dns data");
+            setInvalid(dnsError ?? "no dns data");
         }
         
         if (dnsIp4.length > 0 && dnsIp6.length > 0){
@@ -258,7 +259,7 @@ async function getServerAddressInfo(serverAddr: string, option: GetServerAddress
         setInvalid("no connection point found");
     
     if (valid && resolveSrvRecord === "force" && srvRecord == null){
-       setInvalid("no srv record found");
+        setInvalid("no srv record found");
     }
 
     if (!valid){
