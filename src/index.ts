@@ -4,3 +4,4 @@ export { getServerAddressInfo } from "./lib/serverAddr.js";
 export { mcping } from './lib/mcping.js';
 export { decodeChatComponent } from "./lib/decodeChatComponent.js";
 export type * from "./types/index.js";
+export type * from "./lib/mcping.js";
