@@ -16,6 +16,7 @@ export interface MCPingOption {
      * 在向服务器发送请求时使用指定的主机名。
      */
     forceHostName?: string;
+    protocolVersionCode?: number;
     resolveSrvRecord?: boolean | "force";
     addressFamily?: 4 | 6;
     preferIpv6?: boolean;
