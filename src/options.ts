@@ -5,6 +5,7 @@ const McpingOptionAllowKeys = [
     "serverType",
     "serverPort",
     "forceHostName",
+    "protocolVersionCode",
     "resolveSrvRecord",
     "addressFamily",
     "preferIpv6",
@@ -46,6 +47,7 @@ export function checkMcpingOption(option: object, throwsOnInvalid: boolean = tru
         serverType,
         serverPort,
         forceHostName,
+        protocolVersionCode,
         resolveSrvRecord,
         addressFamily,
         preferIpv6,
@@ -60,7 +62,7 @@ export function checkMcpingOption(option: object, throwsOnInvalid: boolean = tru
     if (serverType != null && !AllowServerTypeList.includes(serverType)){
         return setResult(false, "Invalid 'serverType': " + serverType);
     }
-    if ((serverType == null || serverType === "unknown") && typeof serverPort !== "number"){
+    if (serverType == null && typeof serverPort !== "number"){
         return setResult(false, "Undefined 'serverPort'");
     }
     
