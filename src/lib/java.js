@@ -7,20 +7,17 @@
 
 import net from 'net';
 import varint from './varint.js';
-import { isIP } from "./serverAddr.js";
 
-const PROTOCOL_VERSION = 0;
+const DEFAULT_PROTOCOL_VERSION = 0;
 
 /**
  * Ping a Minecraft Java server.
- * @param {string} ip The ip address of the Java server.
- * @param {number} port The port of the Java server.
- * @param {import("../types/lib/java.js").JavaPingCallback} cb The callback function to handle the ping response.
+ * @param {import("../types/java.js").JavaPingOption} option 包含一系列参数的对象。
+ * @param {import("../types/java.js").JavaPingCallback} cb The callback function to handle the ping response.
  * @param {number} [timeout=5000] The timeout duration in milliseconds.
- * @param {string} [serverAddr=ip] 将会发送到服务器以查询服务器信息使用的服务器连接地址，一般情况下这没有什么作用。默认与 `ip` 相同。
  */
-export function ping(ip, port, cb, timeout = 5000, serverAddr = ip) {
-    const socket = net.createConnection(({ host: ip, port }));
+export function pingJava(option, cb, timeout = 5000) {
+    const socket = net.createConnection({ host: option.ip, port: option.port });
 
     // Set manual timeout interval.
     // This ensures the connection will NEVER hang regardless of internal state
@@ -53,6 +50,8 @@ export function ping(ip, port, cb, timeout = 5000, serverAddr = ip) {
 
     let startPingConnectTime = 0;
     let pingDelay = null;
+    let serverAddr = option.serverAddr ?? option.ip;
+    let serverPort = option.serverPort ?? option.port;
 
     // #setNoDelay instantly flushes data during read/writes
     // This prevents the runtime from delaying the write at all
@@ -61,10 +60,10 @@ export function ping(ip, port, cb, timeout = 5000, serverAddr = ip) {
     socket.on('connect', () => {
         const handshake = varint.concat([
             varint.encodeInt(0),
-            varint.encodeInt(PROTOCOL_VERSION),
+            varint.encodeInt(option.protocolVersion ?? DEFAULT_PROTOCOL_VERSION),
             varint.encodeInt(serverAddr.length),
             varint.encodeString(serverAddr),
-            varint.encodeUShort(port),
+            varint.encodeUShort(serverPort),
             varint.encodeInt(1)
         ]);
 
@@ -82,8 +81,9 @@ export function ping(ip, port, cb, timeout = 5000, serverAddr = ip) {
     let incomingBuffer = Buffer.alloc(0);
 
     socket.on('data', (data) => {
-        if (pingDelay == null)
+        if (pingDelay == null){
             pingDelay = Date.now() - startPingConnectTime;
+        }
 
         incomingBuffer = Buffer.concat([incomingBuffer, data]);
 
@@ -112,7 +112,6 @@ export function ping(ip, port, cb, timeout = 5000, serverAddr = ip) {
 
             try {
                 const message = JSON.parse(response);
-
                 closeSocket();
                 cb(null, { pingDelay, pingResponse: message });
             } catch (err) {

@@ -1,8 +1,8 @@
-import { ServerValidAddressInfo, ServerAddressInfo, ServerInvalidAddressInfo, getServerAddressInfo } from "./serverAddr.js";
-import { JavaPingResult } from "../types/lib/java.js";
-import { BedrockPingResult } from "../types/lib/bedrock.js";
-import { ping as pingJava } from "./java.js";
-import { ping as pingBedrock } from "./bedrock.js";
+import { ServerValidAddressInfo, ServerAddressInfo, ServerInvalidAddressInfo, getServerAddressInfo } from "./lib/serverAddr.js";
+import { JavaPingResult } from "./types/java.js";
+import { BedrockPingResult } from "./types/bedrock.js";
+import { pingJava } from "./lib/java.js";
+import { pingBedrock } from "./lib/bedrock.js";
 
 export { mcping };
 
@@ -80,7 +80,11 @@ async function mcping(host: string | MCPingOption, option?: ServerType | number 
 
         if (serverAddressInfoJava.valid && addressIsValid){
             java = await new Promise((resolve, reject) => {
-                pingJava(serverAddressInfoJava.ip, serverAddressInfoJava.port, (e, r) => {
+                pingJava({
+                   ip: serverAddressInfoJava.ip,
+                   port: serverAddressInfoJava.port,
+                   serverAddr: forceHostName ?? (serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr)
+                }, (e, r) => {
                     if (e){
                         if (throwsOnFail && serverType === "java")
                             reject(e);
@@ -90,7 +94,7 @@ async function mcping(host: string | MCPingOption, option?: ServerType | number 
                     } else {
                         resolve(r);
                     }
-                }, 5000, forceHostName ?? (serverAddressInfoJava.srvRecord ? serverAddressInfoJava.srvRecord.ip : serverAddr));
+                }, 5000);
             });
         }
     }

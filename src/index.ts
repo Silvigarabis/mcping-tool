@@ -1,7 +1,25 @@
-export { ping as pingJava } from './lib/java.js';
-export { ping as pingBedrock } from './lib/bedrock.js';
-export { getServerAddressInfo } from "./lib/serverAddr.js";
-export { mcping } from './lib/mcping.js';
+export {
+    GetServerAddressInfoOptions,
+    getServerAddressInfo,
+    ServerAddressInfo,
+    ServerInvalidAddressInfo,
+    ServerValidAddressInfo,
+    ServerType
+} from "./lib/serverAddr.js";
+
 export { decodeChatComponent } from "./lib/decodeChatComponent.js";
-export type * from "./types/index.js";
-export type * from "./lib/mcping.js";
+export { resolveMinecraftServerSrvRecord } from "./lib/srv.js";
+export { pingJava } from './lib/java.js';
+export { pingBedrock } from './lib/bedrock.js';
+
+export {
+    MCPingOption,
+    MCPingResult,
+    MCPingSuccessResult,
+    MCPingSuccessWithJavaResult,
+    MCPingSuccessWithBedrockResult,
+    MCPingFailResult,
+    mcping
+} from './mcping.js';
+
+export { checkMcpingOption } from "./options.js";

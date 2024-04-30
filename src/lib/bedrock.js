@@ -130,10 +130,10 @@ const UNCONNECTED_PONG = (buffer) => {
  * Sends a ping request to the specified ip and port.
  * @param {string} ip - The IP address of the server.
  * @param {number} port - The port number.
- * @param {import("../types/lib/bedrock.js").BedrockPingCallback} cb - The callback function to handle the response.
+ * @param {import("../types/bedrock.js").BedrockPingCallback} cb - The callback function to handle the response.
  * @param {number} [timeout=5000] - The timeout duration in milliseconds.
  */
-export function ping(ip, port, cb, timeout = 5000){
+export function pingBedrock(ip, port, cb, timeout = 5000){
     let socket;
 
     if (isIPV6(ip)){
@@ -200,13 +200,13 @@ export function ping(ip, port, cb, timeout = 5000){
                         max: Number(pong.maxPlayers),
                         online: Number(pong.currentPlayers)
                     },
-                    description: pong.description.replace(/\xA7[0-9A-FK-OR]/ig, ''),
+                    description: pong.description,
                     gamemode: pong.mode,
                     detailInfo: pong,
                 };
 
                 closeSocket();
-                cb(null, { pingDelay, pingResponse: clientData });
+                cb(null, { pingDelay, pingResponse: clientData, rawObject: pong });
                 break;
             }
 

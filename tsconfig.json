@@ -15,7 +15,7 @@
 
         "declaration": true,
         "declarationMap": true,
-        "declarationDir": "./@types/",
+        "declarationDir": "./dist/@types/",
 
         "noEmitOnError": false,
         "forceConsistentCasingInFileNames": true,

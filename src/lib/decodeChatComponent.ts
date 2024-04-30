@@ -1,4 +1,4 @@
-import type { ChatComponent } from "../types/lib/java.js";
+import type { ChatComponent } from "../types/java.js";
 
 export function decodeChatComponent(component: ChatComponent | ChatComponent[] | string, cleanColorCode = false): string {
     let depth = 0;
@@ -123,6 +123,7 @@ export function decodeChatComponent(component: ChatComponent | ChatComponent[] |
         return text;
     }
 }
+
 /*
 "black"
 "dark_blue"
