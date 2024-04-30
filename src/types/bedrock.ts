@@ -30,7 +30,6 @@ export type BedrockPingDetailInfo = {
 export type BedrockPingResult<Response extends BedrockPingResponse = BedrockPingResponse> = {
     pingDelay: number;
     pingResponse: Response;
-    rawObject: BedrockPingDetailInfo;
 };
 
 export type BedrockPingCallback = (err: any, result: BedrockPingResult) => any

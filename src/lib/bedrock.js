@@ -206,7 +206,7 @@ export function pingBedrock(ip, port, cb, timeout = 5000){
                 };
 
                 closeSocket();
-                cb(null, { pingDelay, pingResponse: clientData, rawObject: pong });
+                cb(null, { pingDelay, pingResponse: clientData });
                 break;
             }
 
